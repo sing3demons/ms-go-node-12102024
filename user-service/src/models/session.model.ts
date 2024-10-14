@@ -9,7 +9,6 @@ export interface SessionDocument extends mongoose.Document {
   updatedAt: Date
 }
 
-
 const sessionSchema = new mongoose.Schema(
   {
     email: { type: 'string' },

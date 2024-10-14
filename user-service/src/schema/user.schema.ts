@@ -46,5 +46,4 @@ export const verifyTokenSchema = object({
   access_token: string(),
 })
 
-
 export type verifyTokenInput = TypeOf<typeof verifyTokenSchema>

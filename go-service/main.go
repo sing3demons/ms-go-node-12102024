@@ -83,7 +83,10 @@ func (h AuthHandler) Login(c ms.HTTPContext) {
 		return
 	}
 
-	result.AddInputLogClient(body)
+	result.AddInputLogClient(map[string]interface{}{
+		"header": c.Req.Header,
+		"body":   body,
+	})
 
 	// r = r.WithContext(context.WithValue(r.Context(), constant.Session, session))
 	resp, err := httpClient.Call(c.Req.Context(), client.Option{
@@ -129,7 +132,10 @@ func (h AuthHandler) Register(c ms.HTTPContext) {
 		return
 	}
 
-	result.AddInputLogClient(body)
+	result.AddInputLogClient(map[string]interface{}{
+		"header": c.Req.Header,
+		"body":   body,
+	})
 
 	resp, err := httpClient.Call(c.Req.Context(), client.Option{
 		Body: map[string]string{
@@ -172,7 +178,11 @@ func (h AuthHandler) Verify(c ms.HTTPContext) {
 		return
 	}
 
-	result.AddInputLogClient(body)
+	result.AddInputLogClient(map[string]interface{}{
+		"header": c.Req.Header,
+		"body":   body,
+	})
+
 	resp, err := httpClient.Call(c.Req.Context(), client.Option{
 		Body: map[string]string{
 			"access_token": body.AccessToken,

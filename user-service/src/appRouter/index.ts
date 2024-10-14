@@ -83,7 +83,7 @@ function createZodSchema<T extends string>(path: T) {
   return schema.parse(paramsArray)
 }
 
-class HttpError extends Error {
+export class HttpError extends Error {
   constructor(public statusCode: number, message: string) {
     super(message)
     this.name = 'HttpError'

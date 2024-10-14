@@ -1,11 +1,10 @@
-import mongoose, { FilterQuery } from 'mongoose'
+import { FilterQuery } from 'mongoose'
 import UserModel, { UserDocument } from '../models/user.model'
 import DetailLog from '../logger/loggerEntry'
 import { LoginInput, UserInput, UserResponse } from '../schema/user.schema'
 import Bcrypt from '../utils/argon'
 import SessionModel from '../models/session.model'
 import { signJwt, verifyJwt } from '../utils/jwt'
-import { Request } from 'express'
 import UserAgentModel from '../models/device.model'
 
 class UserService {

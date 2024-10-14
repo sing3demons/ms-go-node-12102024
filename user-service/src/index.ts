@@ -28,7 +28,7 @@ export const StartServer = async () => {
 
   const server = app.listen(port, () => {
     logger.info(opt, `Server is running on port ${port}`)
-   })
+  })
 
   process.on('unhandledRejection', (reason, promise) => {
     logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`)

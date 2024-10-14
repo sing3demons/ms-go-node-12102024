@@ -63,7 +63,7 @@ func NewDetailLog(req *http.Request) *DetailLog {
 	startTime := time.Now().Format(time.RFC3339)
 
 	return &DetailLog{
-		Name: os.Getenv("SERVICE_NAME"),
+		Name:    os.Getenv("SERVICE_NAME"),
 		LogName: "DETAIL",
 		Context: LogContext{
 			TraceID: traceID,
@@ -101,7 +101,6 @@ func (d *DetailLog) AddEvent(name string, data interface{}, fieldsToMasks ...Mas
 	if !ok {
 		jsonData, _ := json.Marshal(data)
 		json.Unmarshal(jsonData, &convertedData)
-
 	}
 
 	attributes := d.MaskSensitiveData(convertedData, fieldsToMask)
