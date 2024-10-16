@@ -1,6 +1,6 @@
 import fs from 'fs'
 // rotating-file-stream
-import { createStream } from 'rotating-file-stream'
+import { createStream, RotatingFileStream } from 'rotating-file-stream'
 import packageInfo from '../package.json'
 
 const logDir = './log/detail'
@@ -34,24 +34,14 @@ function getLogFileName(time: Date | number): string {
 }
 
 // Create a rotating write stream for logs
+const logStream: RotatingFileStream | null =
+  process.env.LOG_FILE === 'true'
+    ? createStream(getLogFileName, {
+        size: '10M',
+        interval: '1d',
+        compress: 'gzip',
+        path: logDir,
+      })
+    : null
 
-const logStream = createStream(getLogFileName, {
-  size: '10M',
-  interval: '1d',
-  compress: 'gzip',
-  path: logDir,
-})
-
-// Function to write log to the rotating file
-function writer(message: string) {
-  // Write log message to the rotating stream
-  logStream.write(message, 'utf8', (err) => {
-    if (err) {
-      console.error('Error writing to log stream:', err)
-    }
-  })
-}
-
-// Example usage of the `write` function
-
-export default writer
+export default logStream

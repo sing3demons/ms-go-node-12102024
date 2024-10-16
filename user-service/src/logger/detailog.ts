@@ -1,7 +1,7 @@
 import os from 'os'
 import packageInfo from '../../package.json'
 import type { Request, Response } from 'express'
-import writer from '../writer'
+import logStream from '../writer'
 const endOfLine = os.EOL
 
 interface InputOutputLog {
@@ -17,6 +17,8 @@ interface InputOutputLog {
 interface DetailLogConfig {
   detail: {
     rawData: boolean
+    logFile: boolean
+    logConsole: boolean
   }
   projectName: string
 }
@@ -42,12 +44,12 @@ export default class DetailLog {
   private outputTime: Date | null
   private timeCounter: { [key: string]: Date }
 
-  private logDetail: object = {}
-
   constructor(private readonly req: Request, private readonly res: Response, initInvoke: string, scenario: string, identity: string) {
     const conf: DetailLogConfig = {
       detail: {
         rawData: true,
+        logFile: process.env.LOG_FILE === 'true',
+        logConsole: true,
       },
       projectName: packageInfo.name,
     }
@@ -160,11 +162,14 @@ export default class DetailLog {
   }
 
   end(): void {
+    if (this.startTimeDate === null) {
+      throw new Error('end() called without any input/output')
+    }
     this.ProcessingTime = new Date().getTime() - (this.startTimeDate?.getTime() || 0) + ' ms'
     this.InputTimeStamp = this.inputTime ? this.inputTime.toISOString() : null
     this.OutputTimeStamp = this.outputTime ? this.outputTime.toISOString() : null
 
-    this.logDetail = {
+    const logDetail = {
       LogType: this.LogType,
       Host: this.Host,
       AppName: this.AppName,
@@ -180,8 +185,24 @@ export default class DetailLog {
       ProcessingTime: this.ProcessingTime,
     }
     // console.log(JSON.stringify(this.logDetail, null, 2))
+    // stdio output
 
-    writer(JSON.stringify(this.logDetail) + endOfLine)
+    // Write to standard output
+
+    if (this.conf.detail.logConsole) {
+      process.stdout.write(JSON.stringify(logDetail) + endOfLine)
+    }
+
+    // Write to rotating file
+    if (this.conf.detail.logFile) {
+      //   writer(JSON.stringify(logDetail) + endOfLine)
+      logStream?.write(JSON.stringify(logDetail) + endOfLine, 'utf8', (err) => {
+        if (err) {
+          console.error('Error writing to log stream:', err)
+        }
+      })
+    }
+
     this._clr()
   }
 

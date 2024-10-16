@@ -59,7 +59,7 @@ app.get('/healthz', (req, res) => {
   const logger = new DetailLog(req, res, 'client.request', 'health', 'user-service')
   const cmd = 'client.request'
 
-  logger.addInputRequest('health', cmd, 'health', req.headers, {},)
+  logger.addInputRequest('health', cmd, 'health', req.headers, {})
   logger.addOutputRequest('health', `service`, 'service', { message: 'OK' }, 200)
   logger.end()
   logger.addInputRequest('health', `service`, 'health', req.headers, {})
