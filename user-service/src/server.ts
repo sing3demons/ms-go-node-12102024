@@ -5,15 +5,16 @@ import log from './logger/logger'
 import userRouter from './router/user.router'
 import { Summary, toSummaryLog } from './logger/summary'
 import helmet from 'helmet'
+import DetailLog from './logger/detailog'
 
 const app = express()
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use((req, res, next) => {
-  if (!req.headers['x-api-service']) {
-    log.error('Unknown API service', { path: req.originalUrl, method: req.method, trace_id: req.trace_id, span_id: req.span_id, session: req.session, headers: req.headers })
-    res.status(404).json({ message: 'Unknown API service', path: req.originalUrl })
-  }
+  // if (!req.headers['x-api-service']) {
+  //   log.error('Unknown API service', { path: req.originalUrl, method: req.method, trace_id: req.trace_id, span_id: req.span_id, session: req.session, headers: req.headers })
+  //   res.status(404).json({ message: 'Unknown API service', path: req.originalUrl })
+  // }
   const traceID = uuidv4()
   const spanID = uuidv4()
   const newSummaryLog: Summary = {
@@ -53,7 +54,20 @@ app.use((req, res, next) => {
 app.use(helmet())
 
 app.use('/api/v1/users', userRouter)
+app.get('/healthz', (req, res) => {
+  console.log('Health check')
+  const logger = new DetailLog(req, res, 'client.request', 'health', 'user-service')
+  const cmd = 'client.request'
 
+  logger.addInputRequest('health', cmd, 'health', req.headers, {},)
+  logger.addOutputRequest('health', `service`, 'service', { message: 'OK' }, 200)
+  logger.end()
+  logger.addInputRequest('health', `service`, 'health', req.headers, {})
+  logger.addOutputRequest('health', cmd, 'health', { message: 'OK' }, 200)
+  // logger.end()
+
+  res.status(200).json({ message: 'OK' })
+})
 app.use((req, res) => {
   log.error('Unknown URL', { path: req.originalUrl, method: req.method, trace_id: req.trace_id, span_id: req.span_id, session: req.session, headers: req.headers })
   res.status(404).json({ message: 'Unknown URL', path: req.originalUrl })
