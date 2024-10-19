@@ -5,9 +5,11 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/sing3demons/go-service/client"
 	"github.com/sing3demons/go-service/constants"
+	"github.com/sing3demons/go-service/logger"
 	"github.com/sing3demons/go-service/ms"
 )
 
@@ -39,6 +41,24 @@ func main() {
 		Name:    os.Getenv("SERVICE_NAME"),
 		System:  "x-go-service",
 	}
+
+	app.GET("/api/v1/health", func(c ms.HTTPContext) {
+		initInvoked := "init_invoked"
+		scenario := "curl -X GET 'http://localhost:8080/api/v1/health'"
+		detailLog := logger.NewDetailLog(c.Req, "health-check"+time.Nanosecond.String(), scenario, "")
+		q := c.Req.URL.Query()
+
+		cmd := "get-health"
+
+		data := map[string]string{"status": "ok"}
+		detailLog.AddInputRequest("client", cmd, initInvoked, nil, q)
+		detailLog.AddOutputResponse("m", "health-check", initInvoked, nil, data)
+		detailLog.End()
+		detailLog.AddInputResponse("m", "health-check", initInvoked, nil, data, "http", "GET")
+		detailLog.AddOutputRequest("client", cmd, initInvoked, "", data)
+		detailLog.End()
+		c.JSON(http.StatusOK, data)
+	})
 
 	app.POST("/api/v1/auth/login", authHandler.Login)
 	app.POST("/api/v1/auth/register", authHandler.Register)

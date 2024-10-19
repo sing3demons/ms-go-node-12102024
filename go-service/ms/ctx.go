@@ -27,6 +27,12 @@ type BaseResponse struct {
 	Log *mlog.DetailLog
 }
 
+func (h *HTTPContext) JSON(code int, data interface{}) {
+	h.Res.Header().Set(constants.ContentType, constants.ContentTypeJSON)
+	h.Res.WriteHeader(code)
+	json.NewEncoder(h.Res).Encode(data)
+}
+
 func (h *HTTPContext) NewCtx() *BaseResponse {
 	return &BaseResponse{
 		Res: h.Res,
