@@ -184,10 +184,6 @@ export default class DetailLog {
       Output: this.Output,
       ProcessingTime: this.ProcessingTime,
     }
-    // console.log(JSON.stringify(this.logDetail, null, 2))
-    // stdio output
-
-    // Write to standard output
 
     if (this.conf.detail.logConsole) {
       process.stdout.write(JSON.stringify(logDetail) + endOfLine)

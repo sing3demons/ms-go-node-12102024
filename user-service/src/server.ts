@@ -6,6 +6,7 @@ import userRouter from './router/user.router'
 import { Summary, toSummaryLog } from './logger/summary'
 import helmet from 'helmet'
 import DetailLog from './logger/detailog'
+import axios, { AxiosResponse } from 'axios'
 
 const app = express()
 app.use(express.json())
@@ -52,6 +53,18 @@ app.use((req, res, next) => {
   }
 })
 app.use(helmet())
+
+app.get('/healthz', async (req, res) => {
+  let resp: Promise<AxiosResponse<any, any>>[] = []
+  for (let i = 0; i < 10000; i++) {
+    await axios.get('http://localhost:8080/api/v1/health')
+    // req.push(axios.get('http://localhost:8080/api/v1/health'))
+  }
+
+  // const data = await Promise.all(resp)
+  // console.log('data', data.length)
+  res.status(200).json({ message: 'OK' })
+})
 
 app.use('/api/v1/users', userRouter)
 app.get('/healthz', (req, res) => {

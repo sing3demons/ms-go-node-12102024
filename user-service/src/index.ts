@@ -3,7 +3,6 @@ import app from './server'
 import logger from './logger/logger'
 import connect from './db'
 import os, { hostname } from 'os'
-import http from 'http'
 
 const port = config.get('port')
 
