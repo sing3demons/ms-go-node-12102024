@@ -5,11 +5,9 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/sing3demons/go-service/client"
 	"github.com/sing3demons/go-service/constants"
-	"github.com/sing3demons/go-service/logger"
 	"github.com/sing3demons/go-service/ms"
 )
 
@@ -45,7 +43,7 @@ func main() {
 	app.GET("/api/v1/health", func(c ms.HTTPContext) {
 		initInvoked := "init_invoked"
 		scenario := "curl -X GET 'http://localhost:8080/api/v1/health'"
-		detailLog := logger.NewDetailLog(c.Req, "health-check"+time.Nanosecond.String(), scenario, "")
+		detailLog := c.DetailLog(initInvoked, scenario, "client")
 		q := c.Req.URL.Query()
 
 		cmd := "get-health"
@@ -57,6 +55,7 @@ func main() {
 		detailLog.AddInputResponse("m", "health-check", initInvoked, nil, data, "http", "GET")
 		detailLog.AddOutputRequest("client", cmd, initInvoked, "", data)
 		detailLog.End()
+
 		c.JSON(http.StatusOK, data)
 	})
 
@@ -83,7 +82,9 @@ type AuthHandler struct {
 }
 
 func (h AuthHandler) Login(c ms.HTTPContext) {
-	result := c.NewCtx()
+	result := c.L()
+	_ = result
+
 	httpClient := client.NewHttp(&client.ServiceConfig{
 		Name:   h.Name,
 		Method: http.MethodPost,
@@ -94,16 +95,16 @@ func (h AuthHandler) Login(c ms.HTTPContext) {
 	var body LoginRequest
 	err := json.NewDecoder(c.Req.Body).Decode(&body)
 	if err != nil {
-		result.Error(http.StatusBadRequest, err)
+		c.Error(http.StatusBadRequest, err)
 		return
 	}
 
 	if body.Email == "" || body.Password == "" {
-		result.Error(http.StatusBadRequest, errors.New("email and password is required"))
+		c.Error(http.StatusBadRequest, errors.New("email and password is required"))
 		return
 	}
 
-	result.AddInputLogClient(map[string]interface{}{
+	c.AddInputLogClient(map[string]interface{}{
 		"header": c.Req.Header,
 		"body":   body,
 	})
@@ -120,18 +121,19 @@ func (h AuthHandler) Login(c ms.HTTPContext) {
 		},
 	})
 	if err != nil {
-		result.Error(http.StatusInternalServerError, err)
+		c.Error(http.StatusInternalServerError, err)
 		return
 	}
 
 	data := map[string]interface{}{}
 	json.Unmarshal(resp.Body, &data)
-	result.AddLogClient(data)
-	result.JSON(resp.StatusCode, data)
+	c.AddLogClient(data)
+	c.JSON(resp.StatusCode, data)
 }
 
 func (h AuthHandler) Register(c ms.HTTPContext) {
-	result := c.NewCtx()
+	result := c.L()
+	_ = result
 
 	httpClient := client.NewHttp(&client.ServiceConfig{
 		Name:   h.Name,
@@ -143,16 +145,16 @@ func (h AuthHandler) Register(c ms.HTTPContext) {
 	var body LoginRequest
 	err := json.NewDecoder(c.Req.Body).Decode(&body)
 	if err != nil {
-		result.Error(http.StatusBadRequest, err)
+		c.Error(http.StatusBadRequest, err)
 		return
 	}
 
 	if body.Email == "" || body.Password == "" {
-		result.Error(http.StatusBadRequest, errors.New("email and password is required"))
+		c.Error(http.StatusBadRequest, errors.New("email and password is required"))
 		return
 	}
 
-	result.AddInputLogClient(map[string]interface{}{
+	c.AddInputLogClient(map[string]interface{}{
 		"header": c.Req.Header,
 		"body":   body,
 	})
@@ -166,18 +168,18 @@ func (h AuthHandler) Register(c ms.HTTPContext) {
 			string(constants.Session): c.GetSession()},
 	})
 	if err != nil {
-		result.Error(http.StatusInternalServerError, err)
+		c.Error(http.StatusInternalServerError, err)
 		return
 	}
 
 	data := map[string]interface{}{}
 	json.Unmarshal(resp.Body, &data)
-	result.AddLogClient(data)
-	result.JSON(resp.StatusCode, data)
+	c.AddLogClient(data)
+	c.JSON(resp.StatusCode, data)
 }
 
 func (h AuthHandler) Verify(c ms.HTTPContext) {
-	result := c.NewCtx()
+	l := c.L()
 
 	httpClient := client.NewHttp(&client.ServiceConfig{
 		Name:   h.Name,
@@ -189,16 +191,16 @@ func (h AuthHandler) Verify(c ms.HTTPContext) {
 	var body VerifyRequest
 	err := json.NewDecoder(c.Req.Body).Decode(&body)
 	if err != nil {
-		result.Error(http.StatusBadRequest, err)
+		c.Error(http.StatusBadRequest, err)
 		return
 	}
 
 	if body.AccessToken == "" {
-		result.Error(http.StatusBadRequest, errors.New("access token is required"))
+		c.Error(http.StatusBadRequest, errors.New("access token is required"))
 		return
 	}
 
-	result.AddInputLogClient(map[string]interface{}{
+	l.AddEvent("client.input", map[string]interface{}{
 		"header": c.Req.Header,
 		"body":   body,
 	})
@@ -214,12 +216,13 @@ func (h AuthHandler) Verify(c ms.HTTPContext) {
 	})
 
 	if err != nil {
-		result.Error(http.StatusInternalServerError, err)
+		c.Error(http.StatusInternalServerError, err)
 		return
 	}
 
 	data := map[string]interface{}{}
 	json.Unmarshal(resp.Body, &data)
-	result.AddLogClient(data)
-	result.JSON(resp.StatusCode, data)
+
+	l.AddEvent("client.output", data)
+	c.JSON(resp.StatusCode, data)
 }

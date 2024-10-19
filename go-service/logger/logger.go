@@ -55,19 +55,17 @@ func NewLogger() *zap.Logger {
 
 func NewLogFile() *zap.Logger {
 	// Create log file with rotating mechanism
-	logfile := filepath.Join(logDir, getLogFileName(time.Now()))
+	logFile := filepath.Join(logDir, getLogFileName(time.Now()))
 	if err := ensureLogDirExists(); err != nil {
 		fmt.Println("Failed to create log directory", err)
 	}
 
 	// Create a zapcore encoder config
 	encCfg := zapcore.EncoderConfig{
-		MessageKey: "msg",
-		TimeKey:    "time",
-		LevelKey:   "level",
-		CallerKey:  "caller",
-		// EncodeTime:   zapcore.ISO8601TimeEncoder,
-		// EncodeLevel:  zapcore.CapitalLevelEncoder,
+		MessageKey:   "msg",
+		TimeKey:      "time",
+		LevelKey:     "level",
+		CallerKey:    "caller",
 		EncodeCaller: zapcore.ShortCallerEncoder,
 	}
 
@@ -76,7 +74,7 @@ func NewLogFile() *zap.Logger {
 
 	// Setting up lumberjack logger for log rotation
 	writerSync := zapcore.AddSync(&lumberjack.Logger{
-		Filename:   logfile,
+		Filename:   logFile,
 		MaxSize:    500, // megabytes
 		MaxBackups: 3,   // number of backups
 		MaxAge:     1,   // days

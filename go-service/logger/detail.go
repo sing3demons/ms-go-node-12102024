@@ -19,6 +19,7 @@ type DetailLog interface {
 	End()
 	AddInputResponse(node, cmd, invoke string, rawData, data interface{}, protocol, protocolMethod string)
 	AddOutputResponse(node, cmd, invoke string, rawData, data interface{})
+	AutoEnd() bool
 }
 
 type InputOutputLog struct {
@@ -81,7 +82,7 @@ func NewDetailLog(req *http.Request, initInvoke, scenario, identity string) Deta
 	conf.Detail.RawData = true
 	conf.Detail.LogFile = true
 	conf.Detail.LogConsole = true
-	conf.ProjectName = os.Getenv("APP_NAME")
+	conf.ProjectName = os.Getenv("SERVICE_NAME")
 
 	session := req.Context().Value(constants.Session)
 
@@ -155,6 +156,7 @@ func (dl *detailLog) AddOutputResponse(node, cmd, invoke string, rawData, data i
 		rawData: rawData,
 		data:    data,
 	})
+	// dl.End()
 }
 
 func (dl *detailLog) addInput(input *logEvent) {
@@ -254,6 +256,18 @@ func (dl *detailLog) buildValueProtocol(protocol, method *string) *string {
 		result += "." + *method
 	}
 	return &result
+}
+
+func (dl *detailLog) AutoEnd() bool {
+	if dl.startTimeDate.IsZero() {
+		return false
+	}
+	if len(dl.Input) == 0 && len(dl.Output) == 0 {
+		return false
+	}
+
+	dl.End()
+	return true
 }
 
 func (dl *detailLog) isRawDataEnabledIf(rawData interface{}) interface{} {
