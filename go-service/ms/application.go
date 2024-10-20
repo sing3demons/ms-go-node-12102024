@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sing3demons/go-service/logger"
 	"github.com/sing3demons/go-service/middleware"
 	"go.uber.org/zap"
@@ -46,7 +48,17 @@ type DbConfig struct {
 }
 
 func NewApplication(cfg Config) *application {
+	prometheus.Register(totalRequests)
+	prometheus.Register(responseStatus)
+	prometheus.Register(httpDuration)
+
 	r := mux.NewRouter()
+
+	reg := prometheus.NewRegistry()
+	// m := NewMetrics(reg)
+	promHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
+	r.Handle("/metrics", promHandler)
+
 	r.Use(middleware.Logger)
 	return &application{
 		config: cfg,
@@ -123,6 +135,10 @@ func (app *application) Run() error {
 	app.logger.Info("server stopped")
 
 	return nil
+}
+
+func (m *application) Log(tag string, msg string) {
+	m.logger.Info(fmt.Sprintf("[%s]: %s", tag, msg))
 }
 
 func (m *application) Use(middleware func(http.Handler) http.Handler) {

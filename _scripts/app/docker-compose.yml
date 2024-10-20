@@ -11,6 +11,7 @@ services:
       - APP_ENV=production
       # - USER_SERVICE_URL=http://host.docker.internal:3000
       - USER_SERVICE_URL=http://user-service:3000
+      - KAFKA_SERVERS=broker:29092
     ports:
       - 8080:8080
     networks:

@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -26,6 +28,7 @@ func init() {
 	if os.Getenv("USER_SERVICE_URL") == "" {
 		os.Setenv("USER_SERVICE_URL", "http://localhost:3000")
 	}
+
 }
 
 func main() {
@@ -40,6 +43,16 @@ func main() {
 		System:  "x-go-service",
 	}
 
+	servers := os.Getenv("KAFKA_SERVERS")
+	if servers == "" {
+		servers = "localhost:9092"
+	}
+
+	fmt.Println("Kafka servers: ", servers)
+
+	topic := "client"
+	prod := ms.NewProducer(servers, app)
+
 	app.GET("/api/v1/health", func(c ms.HTTPContext) {
 		initInvoked := "init_invoked"
 		scenario := "curl -X GET 'http://localhost:8080/api/v1/health'"
@@ -50,11 +63,11 @@ func main() {
 
 		data := map[string]string{"status": "ok"}
 		detailLog.AddInputRequest("client", cmd, initInvoked, nil, q)
-		detailLog.AddOutputResponse("m", "health-check", initInvoked, nil, data)
-		detailLog.End()
-		detailLog.AddInputResponse("m", "health-check", initInvoked, nil, data, "http", "GET")
+
 		detailLog.AddOutputRequest("client", cmd, initInvoked, "", data)
-		detailLog.End()
+
+		go prod.SendMessage(topic, "", data)
+		prod.SendMessage("test", "", data)
 
 		c.JSON(http.StatusOK, data)
 	})
@@ -62,6 +75,15 @@ func main() {
 	app.POST("/api/v1/auth/login", authHandler.Login)
 	app.POST("/api/v1/auth/register", authHandler.Register)
 	app.POST("/api/v1/auth/verify", authHandler.Verify)
+
+	app.Consume(servers, topic, "group_id", func(c *ms.ConsumerContext) {
+		// c.Log("Consumer:: -> " + c.ReadInput())
+		log.Println("Consumer:: -> ", c.Payload())
+	})
+
+	app.Consume(servers, "test", "group_id", func(c *ms.ConsumerContext) {
+		log.Println("Consumer:: -> ", c.Payload())
+	})
 
 	app.Run()
 }
