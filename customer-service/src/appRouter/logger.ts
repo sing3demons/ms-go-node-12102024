@@ -8,9 +8,7 @@ import dayjs from 'dayjs'
 // })
 
 const log = logger({
-  base: {
-    pid: true,
-  },
+  base: {},
   timestamp: () => `,"@timestamp":"${dayjs().format()}"`,
 })
 export default log

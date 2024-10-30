@@ -3,6 +3,9 @@ import packageInfo from '../../package.json'
 import dayjs from 'dayjs'
 import logger from './logger'
 
+const serviceName = packageInfo.name
+export { serviceName }
+
 interface MaskingConfig {
   highlight?: string[]
   mark?: string[]
@@ -19,7 +22,7 @@ class DetailLog {
   start_time: string
   end_time?: string
   attributes: Record<string, any>
-  events: { name: string; timestamp: string; attributes?: Record<string, any> }[]
+  events: { name: string; timestamp: string; attributes?: Record<string, any>; response_time: string }[]
   response_time?: string
 
   constructor(req: Request, res: Response) {
@@ -48,17 +51,23 @@ class DetailLog {
   }
 
   addEvent(name: string, attributes?: Record<string, any>) {
-    this.events.push({ name, timestamp: dayjs().toISOString(), attributes })
+    const response_time = `${new Date().getTime() - new Date(this.start_time).getTime()}ms`
+    const event = { name, timestamp: dayjs().toISOString(), attributes, response_time }
+    this.events.push(event)
     return this
   }
 
-  addEventWithMark(name: string, data?: Record<string, any>, fieldsToMask: MaskingConfig = { highlight: [], mark: ['password'] }) {
+  addEventWithMark(
+    name: string,
+    data?: Record<string, any>,
+    fieldsToMask: MaskingConfig = { highlight: [], mark: ['password'] }
+  ) {
     if (!fieldsToMask.mark) {
       fieldsToMask.mark = ['password']
     }
     const attributes = this.maskSensitiveData(data, fieldsToMask)
-
-    this.events.push({ name, timestamp: dayjs().toISOString(), attributes })
+    const response_time = `${new Date().getTime() - new Date(this.start_time).getTime()}ms`
+    this.events.push({ name, timestamp: dayjs().toISOString(), attributes, response_time })
     return this
   }
 
@@ -121,6 +130,9 @@ class DetailLog {
     this.setResponseTime(duration)
     logger.info(this)
     this.events = []
+    this.start_time = endTime
+    this.end_time = undefined
+    this.attributes = {}
   }
 
   finish() {

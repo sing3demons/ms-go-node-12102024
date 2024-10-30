@@ -12,8 +12,7 @@ import { v7 as uuid } from 'uuid'
 import promBundle from 'express-prom-bundle'
 import { Type, Static, TSchema } from '@sinclair/typebox'
 import { TypeCompiler } from '@sinclair/typebox/compiler'
-import swaggerJsDoc from 'swagger-jsdoc'
-import DetailLog from './loggerEntry'
+import log from './logger'
 
 const transaction = 'x-session-id'
 const metricsMiddleware = promBundle({ includeMethod: true })
@@ -409,6 +408,15 @@ class AppServer extends BaseRouter {
     this.app.use(express.urlencoded({ extended: true }))
     this.app.use(metricsMiddleware)
     this.app.use((req: Request, _res: Response, next: NextFunction) => {
+      const traceID = uuid()
+      const spanID = uuid()
+      req['trace_id'] = traceID
+      req['span_id'] = spanID
+      if (!req.headers['session']) {
+        req['session'] = `default-${uuid()}`
+      } else {
+        req['session'] = req.headers['session'] as string
+      }
       if (!req.headers[transaction]) {
         req.headers[transaction] = `default-${uuid()}`
       }
@@ -459,7 +467,7 @@ class AppServer extends BaseRouter {
     this.app.use(globalErrorHandler)
 
     const server = http.createServer(this.app).listen(port, () => {
-      console.log(`Server is running on port: ${port}`)
+      log.info(`Server is running on port: ${port}`)
     })
 
     const connections = new Set<Socket>()
@@ -474,16 +482,16 @@ class AppServer extends BaseRouter {
     const signals = ['SIGINT', 'SIGTERM']
     signals.forEach((signal) => {
       process.on(signal, () => {
-        console.log(`Received ${signal}, shutting down gracefully...`)
+        log.info(`Received ${signal}, shutting down gracefully...`)
         server.close(() => {
-          console.log('Closed out remaining connections.')
+          log.info('Closed out remaining connections.')
           close?.()
           process.exit(0)
         })
 
         // If after 10 seconds the server hasn't finished, force shutdown
         setTimeout(() => {
-          console.error('Forcing shutdown as server is taking too long to close.')
+          log.error('Forcing shutdown as server is taking too long to close.')
           connections.forEach((connection) => {
             connection.destroy()
           })
